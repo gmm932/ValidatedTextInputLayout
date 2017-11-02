@@ -128,18 +128,17 @@ public class ValidatedTextInputLayout extends TextInputLayout {
                         }
                     });
 
-                    imageClear.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Drawable dummyDrawable = new ColorDrawable();
-                            dummyDrawable.setBounds(0, 0, imageClear.getMeasuredWidth(), 1);
+                    imageClear.setPadding(getEditText().getPaddingLeft(), getEditText().getPaddingTop(),
+                            getEditText().getPaddingRight(), getEditText().getPaddingBottom());
 
-                            final Drawable[] compounds = getEditText().getCompoundDrawables();
-                            TextViewCompat.setCompoundDrawablesRelative(getEditText(), compounds[0], compounds[1],
-                                    dummyDrawable, compounds[3]);
+                    int dummyWidth = getEditText().getPaddingLeft() + getEditText().getPaddingRight() +  mRightClearDrawable.getIntrinsicWidth();
 
-                        }
-                    });
+                    Drawable dummyDrawable = new ColorDrawable();
+                    dummyDrawable.setBounds(0, 0, dummyWidth, 1);
+
+                    Drawable[] compounds = getEditText().getCompoundDrawables();
+                    TextViewCompat.setCompoundDrawablesRelative(getEditText(), compounds[0], compounds[1],
+                            dummyDrawable, compounds[3]);
 
                     imageClear.setVisibility(GONE);
 

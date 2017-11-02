@@ -6,6 +6,4 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center_vertical|end|right"
     android:background="?attr/selectableItemBackgroundBorderless"
-    android:scaleType="centerInside"
-    android:minHeight="24dp"
-    android:minWidth="24dp"/>
+    android:scaleType="centerInside"/>
