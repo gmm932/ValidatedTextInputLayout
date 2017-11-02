@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="ValidatedInputTextLayout">
+        <attr name="rightClearDrawable" format="integer"/>
+        <attr name="rightErrorMessage" format="boolean"/>
         <attr name="autoValidate" format="boolean"/>
         <attr name="autoTrim" format="boolean"/>
         <attr name="isRequired" format="boolean"/>

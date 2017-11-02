@@ -2,10 +2,21 @@ package com.julianraj.validatedtextinputlayout;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.widget.TextViewCompat;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.julianraj.validatedtextinputlayout.validator.BaseValidator;
 import com.julianraj.validatedtextinputlayout.validator.IValidator;
@@ -13,6 +24,7 @@ import com.julianraj.validatedtextinputlayout.validator.LengthValidator;
 import com.julianraj.validatedtextinputlayout.validator.RegexValidator;
 import com.julianraj.validatedtextinputlayout.validator.RequiredValidator;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +39,9 @@ public class ValidatedTextInputLayout extends TextInputLayout {
     private boolean mAutoValidate = false;
     private boolean mAutoTrimValue = false;
     private boolean mErrorAlwaysEnabled = true;
+    private boolean mRightErrorMessage = false;
+
+    private Drawable mRightClearDrawable;
 
     public ValidatedTextInputLayout(Context context) {
         super(context);
@@ -71,13 +86,88 @@ public class ValidatedTextInputLayout extends TextInputLayout {
                 mErrorAlwaysEnabled = typedArray.getBoolean(R.styleable
                         .ValidatedInputTextLayout_errorAlwaysEnabled, true);
 
+                mRightErrorMessage = typedArray.getBoolean(R.styleable.ValidatedInputTextLayout_rightErrorMessage, false);
+
+                mRightClearDrawable = typedArray.getDrawable(R.styleable.ValidatedInputTextLayout_rightClearDrawable);
+
+                initRightClearBtn();
                 initRequiredValidation(context, typedArray);
                 initLengthValidation(context, typedArray);
                 initRegexValidation(context, typedArray);
+
             } finally {
                 typedArray.recycle();
             }
         }
+    }
+
+    private void initRightClearBtn() {
+
+        if (mRightClearDrawable != null) {
+
+            this.post(new Runnable() {
+                @Override
+                public void run() {
+
+                    if (getEditText() == null) {
+                        return;
+                    }
+
+                    FrameLayout mInputFrame = (FrameLayout) getChildAt(0);
+
+                    final ImageView imageClear = (ImageView) LayoutInflater.from(getContext())
+                            .inflate(R.layout.input_text_clear_icon, mInputFrame, false);
+                    imageClear.setImageDrawable(mRightClearDrawable);
+
+                    mInputFrame.addView(imageClear);
+
+                    imageClear.setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            getEditText().setText(null);
+                        }
+                    });
+
+                    imageClear.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Drawable dummyDrawable = new ColorDrawable();
+                            dummyDrawable.setBounds(0, 0, imageClear.getMeasuredWidth(), 1);
+
+                            final Drawable[] compounds = getEditText().getCompoundDrawables();
+                            TextViewCompat.setCompoundDrawablesRelative(getEditText(), compounds[0], compounds[1],
+                                    dummyDrawable, compounds[3]);
+
+                        }
+                    });
+
+                    imageClear.setVisibility(GONE);
+
+                    getEditText().addTextChangedListener(new TextWatcher() {
+                        @Override
+                        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                        }
+
+                        @Override
+                        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                        }
+
+                        @Override
+                        public void afterTextChanged(Editable s) {
+
+                            imageClear.setVisibility(TextUtils.isEmpty(s.toString()) ? GONE : VISIBLE);
+
+                        }
+                    });
+
+                }
+            });
+
+
+        }
+
     }
 
     private void initRequiredValidation(Context context, TypedArray typedArray) {
@@ -136,7 +226,7 @@ public class ValidatedTextInputLayout extends TextInputLayout {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (isAutoValidated()) validate();
-                else setError(null);
+                else setError(null); setErrorEnabled(false);
             }
 
             @Override
@@ -178,6 +268,33 @@ public class ValidatedTextInputLayout extends TextInputLayout {
         return mAutoValidate;
     }
 
+
+    @Override
+    public void setErrorEnabled(boolean enabled) {
+        super.setErrorEnabled(enabled);
+
+        if (!enabled || !mRightErrorMessage) {
+            return;
+        }
+
+        try {
+            Field errorViewField = TextInputLayout.class.getDeclaredField("mErrorView");
+            errorViewField.setAccessible(true);
+            TextView errorView = (TextView) errorViewField.get(this);
+            if (errorView != null) {
+                errorView.setGravity(Gravity.RIGHT);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                params.gravity = Gravity.END;
+                errorView.setLayoutParams(params);
+            }
+        }
+        catch (Exception e) {
+            // At least log what went wrong
+            e.printStackTrace();
+        }
+
+    }
+
     /**
      * Enable or disable auto-trimming of the value of the input field for the
      * {@link ValidatedTextInputLayout}.
@@ -208,6 +325,15 @@ public class ValidatedTextInputLayout extends TextInputLayout {
      */
     public boolean isAutoTrimEnabled() {
         return mAutoTrimValue;
+    }
+
+
+    public boolean ismRightErrorMessage() {
+        return mRightErrorMessage;
+    }
+
+    public void setRightErrorMessage(boolean mRightErrorMessage) {
+        this.mRightErrorMessage = mRightErrorMessage;
     }
 
     /**
